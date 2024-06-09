@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Tests
 {
@@ -21,6 +22,15 @@ namespace Tests
 
             File.WriteAllText(Path.Combine(Directory.GetCurrentDirectory(), "export.csv"), csv.ToString());
             Assert.IsTrue(true);
+        }
+
+        [Test]
+        public void TestIntersection()
+        {
+            Vector3 origin = new Vector3(0, 0, 0);
+            Vector3 end = new Vector3(53, 15, 5);
+            Vector3 intersection = World.Intersection(origin, end, 0, 50);
+            Assert.IsTrue(intersection == end, intersection.ToString());
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using UnityEditor;
-using UnityEngine;
 
 [CustomEditor(typeof(Target))]
 public class TargetEditor : Editor
@@ -11,7 +10,7 @@ public class TargetEditor : Editor
         EditorGUILayout.Vector3Field("Global position", targetComponent.transform.position);
         EditorGUILayout.Vector3Field("Global scale", targetComponent.transform.lossyScale);
 
-        bool touched = GUILayout.Toggle(targetComponent.transform.localRotation.z < 0, "Touched");
-        targetComponent.SetTouched(touched);
+        targetComponent.SetTouched(targetComponent.Touched);
+        targetComponent.SmallTarget.SetActive(targetComponent.TargetType == TargetsHolder.ShootType.Prone);
     }
 }

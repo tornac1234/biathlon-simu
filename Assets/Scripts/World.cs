@@ -41,11 +41,6 @@ public static class World
         return kmph / 3.6f;
     }
 
-    public static float CalculateDragForce(float dragForceFactor, float speed)
-    {
-        return dragForceFactor * Mathf.Pow(speed, 2);
-    }
-
     public static float CalculateDragForceFactor(float fluidVolumicMass, float surface)
     {
         return 0.5f * fluidVolumicMass * surface * DRAG_FACTOR;
@@ -70,9 +65,39 @@ public static class World
     /// <summary>
     /// Calcule le volume du projectile, approximé à un cylindre.
     /// </summary>
-    /// <returns></returns>
     public static float CalculateVolume(float radius, float height)
     {
         return height * Mathf.PI * Mathf.Pow(radius, 2);
+    }
+
+    /// <summary>
+    /// Dichotomy algorithm adapted with 3d vectors, based on the only coordinate being looked up.
+    /// </summary>
+    /// <param name="coordinateIndex">Coordinate index in the vector (0: x, 1: y, 2: z)</param>
+    public static Vector3 Intersection(Vector3 origin, Vector3 end, int coordinateIndex, float limit, float tolerance = 1E-6f)
+    {
+        Vector3 cursor = origin;
+        while (Mathf.Abs(cursor[coordinateIndex] - limit) > tolerance)
+        {
+            cursor = (origin + end) / 2;
+
+            float cursorCoordinate = cursor[coordinateIndex] - limit;
+            float originCoordinate = origin[coordinateIndex] - limit;
+
+            if (cursorCoordinate * originCoordinate > 0)
+            {
+                origin = cursor;
+            }
+            else if (cursorCoordinate * originCoordinate < 0)
+            {
+                end = cursor;
+            }
+            else
+            {
+                return cursor;
+            }
+        }
+
+        return cursor;
     }
 }

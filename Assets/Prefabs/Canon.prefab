@@ -119,8 +119,12 @@ MonoBehaviour:
   GlobalFixedTransform: {fileID: 0}
   LocalFixedTransform: {fileID: 3678195707819033501}
   MovingTransform: {fileID: 3678195707475543159}
-  TrajectoryType: 0
+  BorderWidth: 0.3
+  BorderHeight: 0.3
+  ShootType: 1
+  TrajectoryType: 1
   MuzzleVelocity: 360
+  Temperature: -20
 --- !u!1 &3678195707475543158
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,12 +15,13 @@ public class Bullet : MonoBehaviour
     private bool Moving;
     private float t;
 
-    private float Temperature;
     private float FluidVolumicMass;
     private float Surface;
     private float Volume;
     private float ArchimedesThrust;
     private float DragForceFactor;
+
+    public float DeltaTime => Time.deltaTime * UI.GetTimeScale();
 
     public void Start()
     {
@@ -52,9 +53,8 @@ public class Bullet : MonoBehaviour
         UI.SetTRText($"X0, Y0, Z0 = {InitialPosition.x}, {InitialPosition.y}, {InitialPosition.z}\nVx0, Vy0, Vz0 = {InitialVelocityFactors.x}, {InitialVelocityFactors.y}, {InitialVelocityFactors.z}\nϴx0, ϴy0, ϴz0 = {rotInRad.x}, {rotInRad.y}, {rotInRad.z}");
 
         // Caching data to avoid too much calculation
-        Temperature = temperature;
         FluidVolumicMass = World.CalculateAirVolumicMass(temperature);
-        Surface = World.CalculateSurface(temperature);
+        Surface = World.CalculateSurface(transform.lossyScale.z / 2);
         Volume = World.CalculateVolume(transform.lossyScale.z / 2, transform.lossyScale.y / 2);
         ArchimedesThrust = World.CalculateArchimedesThrust(FluidVolumicMass, Volume);
         DragForceFactor = World.CalculateDragForceFactor(FluidVolumicMass, Surface);
@@ -63,6 +63,15 @@ public class Bullet : MonoBehaviour
         PreviousPosition = transform.position;
         PreviousSpeed = InitialVelocityFactors;
         PreviousAcceleration = CalculateAcceleration();
+        
+        /*Debug.Log(PreviousPosition);
+        Debug.Log($"Initial speed: {PreviousSpeed}, {PreviousSpeed.magnitude}");
+        Debug.Log(PreviousAcceleration);
+        Debug.Log($"DragForceFactor: {DragForceFactor}");
+        Debug.Log($"FluidVolumicMass: {FluidVolumicMass}");
+        Debug.Log($"Surface: {Surface}");
+        Debug.Log($"Volume: {Volume}");
+        Debug.Log($"ArchimedesThrust: {ArchimedesThrust}");*/
     }
 
     public void Update()
@@ -72,8 +81,7 @@ public class Bullet : MonoBehaviour
             return;
         }
 
-        float deltaTime = Time.deltaTime * UI.GetTimeScale();
-        t += deltaTime;
+        t += DeltaTime;
 
         switch (Trajectory)
         {
@@ -81,14 +89,15 @@ public class Bullet : MonoBehaviour
                 FreeFallMovement();
                 break;
             case TrajectoryType.Fluid:
-                FluidMovement(deltaTime);
+                FluidMovement();
                 break;
         }
 
-        if (transform.position.x > 50)
+        // Lifespan shouldn't be too long to not have failed shots eating performance
+        if (t > 10)
         {
-            Moving = false;
-            MarkWall();
+            Destroy(gameObject);
+            return;
         }
 
         UI.SetTLText($"T = {t}\nX = {transform.position.x}\nY = {transform.position.y}\nZ = {transform.position.z}");
@@ -103,22 +112,22 @@ public class Bullet : MonoBehaviour
         SetPos(x, y, z);
     }
 
-    public void FluidMovement(float deltaTime)
+    public void FluidMovement()
     {
         PreviousAcceleration = CalculateAcceleration();
-        Vector3 speed = PreviousSpeed + PreviousAcceleration * deltaTime;
+        Vector3 speed = PreviousSpeed + PreviousAcceleration * DeltaTime;
 
-        Vector3 position = PreviousPosition + speed * deltaTime;
+        Vector3 position = transform.position + speed * DeltaTime;
         SetPos(position.x, position.y, position.z);
         
+        // TODO: Add wind force
+
         PreviousSpeed = speed;
     }
 
     public void MarkWall()
     {
-        float factor = Mathf.InverseLerp(PreviousPosition.x, transform.position.x, 50);
-
-        Vector3 markPosition = Vector3.Lerp(PreviousPosition, transform.position, factor);
+        Vector3 markPosition = World.Intersection(PreviousPosition, transform.position, 0, 50);
 
         TargetsHolder.Main.AddMark(markPosition, ShootType);
         Destroy(gameObject);
@@ -129,6 +138,15 @@ public class Bullet : MonoBehaviour
         PreviousPosition = transform.position;
         transform.position = new Vector3(x, y, z);
         // TODO: Set rotation according to velocity (tangent)
+
+        if (transform.position.x >= 50)
+        {
+            float movedFactor = Mathf.InverseLerp(PreviousPosition.x, transform.position.x, 50);
+            Moving = false;
+            // Remove time which passed after crossing the wall
+            t -= (1 - movedFactor) * DeltaTime;
+            MarkWall();
+        }
     }
 
     public Vector3 CalculateAcceleration()

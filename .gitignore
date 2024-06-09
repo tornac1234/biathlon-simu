@@ -72,5 +72,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 # Extra stuff
-export.csv
-tableaux.xlsx
+/*.csv
+/*.xlsx
